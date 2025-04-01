@@ -1,23 +1,18 @@
-import {db} from '$lib/server/db'; //database connection
-import {user} from '$lib/server/db/schema'; //user table connection
-import {json} from '@sveltejs/kit'; //json response
+import { json } from '@sveltejs/kit';
+import { db } from '$lib/server/db';
+import { user } from '$lib/server/db/schema';
 
-import type { RequestHandler } from './$types';
+export async function GET() {
+    const users = await db.select().from(user);
+    return json(users);
+}
 
-export const GET: RequestHandler = async () => {
-    const data = await db.select().from(user);
-
-    return json ({data: data});
-};
-
-export const POST: RequestHandler = async ({request}) => {
-    const {user_name, user_age, bio} = await request.json();
-
-    const query = await db.insert(user).values({
-        user_name: user_name,
-        user_age: user_age,
-        bio: bio
-    });
-
-    return json({success: true});
-};
+export async function POST({ request }) {
+    const { user_name, user_age, bio } = await request.json();
+    const newUser = await db.insert(user).values({
+        user_name,
+        user_age,
+        bio
+    }).returning();
+    return json(newUser[0]);
+}
