@@ -11,11 +11,12 @@ export const GET: RequestHandler = async () => {
 };
 
 export const POST: RequestHandler = async ({request}) => {
-    const {user_name, user_age} = await request.json();
+    const {user_name, user_age, bio} = await request.json();
 
     const query = await db.insert(user).values({
         user_name: user_name,
-        user_age: user_age
+        user_age: user_age,
+        bio: bio
     });
 
     return json({success: true});
