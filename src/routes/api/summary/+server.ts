@@ -4,8 +4,10 @@ import { user } from '$lib/server/db/schema';
 import { inArray } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
 
-export async function POST({ request }) {
-    const { userIds } = await request.json();
+import type { RequestEvent } from '@sveltejs/kit';
+
+export async function POST({ request }: RequestEvent) {
+    const { userIds,instructions } = await request.json();
     
     if (!userIds || userIds.length === 0) {
         return json({ error: 'No users selected' }, { status: 400 });
@@ -17,7 +19,7 @@ export async function POST({ request }) {
     const names = users.map(u => u.user_name || 'No names provided').join('\n');
     const ages = users.map(u => u.user_age || 'No ages provided').join('\n');
     const bios = users.map(u => u.bio || 'No bio provided').join('\n');
-    const prompt = `Provide a concise summary of the following user information:\n${bios} \n${names} \n${ages}. Additionally, provide a relevant connection between the users based on their bios, names, and ages.`;
+    const prompt = `${instructions || 'Provide a concise summary of the following user information and a relevant connection between the users based on their bios, names, and ages.'}\n\nUser Data:\nBios:\n${bios}\nNames:\n${names}\nAges:\n${ages}`;
 
     // OpenRouter.ai integration
     const apiKey = env.OPENROUTER_API_KEY;
