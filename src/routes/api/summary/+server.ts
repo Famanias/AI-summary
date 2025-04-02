@@ -1,47 +1,13 @@
-import { json } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { user } from '$lib/server/db/schema';
-import { inArray } from 'drizzle-orm';
-import { env } from '$env/dynamic/private';
+import {db} from '$lib/server/db'; //database connection
+import {user} from '$lib/server/db/schema'; //user table connection
+import {json} from '@sveltejs/kit'; //json response
 
-export async function POST({ request }) {
-    const { userIds } = await request.json();
-    
-    if (!userIds || userIds.length === 0) {
-        return json({ error: 'No users selected' }, { status: 400 });
-    }
+import type { RequestHandler } from './$types';
 
-    // Fetch selected users
-    const users = await db.select().from(user).where(inArray(user.user_id, userIds));
-    
-    const names = users.map(u => u.user_name || 'No names provided').join('\n');
-    const ages = users.map(u => u.user_age || 'No ages provided').join('\n');
-    const bios = users.map(u => u.bio || 'No bio provided').join('\n');
-    const prompt = `Provide a concise summary of the following user information:\n${bios} \n${names} \n${ages}. Additionally, provide a relevant connection between the users based on their bios, names, and ages.`;
+export const GET: RequestHandler = async () => {
+    const data = await db.select().from(user);
 
-    // OpenRouter.ai integration
-    const apiKey = env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-        throw new Error('OPENROUTER_API_KEY is not set');
-    }
+    //connect LLM 
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            model: 'deepseek/deepseek-r1',
-            messages: [{ role: 'user', content: prompt }],
-        }),
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to fetch summary from OpenRouter.ai');
-    }
-
-    const result = await response.json();
-    const summary = result.choices[0].message.content;
-    return json({ summary });
-}
+    return json ({response: "The summary of this data is: "});
+};
